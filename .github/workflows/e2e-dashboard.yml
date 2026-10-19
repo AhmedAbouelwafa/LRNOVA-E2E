@@ -77,8 +77,17 @@ jobs:
         env:
           APP_DIR: ${{ steps.spec.outputs.build_app == 'true' && 'app' || '' }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          E2E_USER_MEMBER_USERNAME: ${{ vars[format('E2E_USER_MEMBER_USERNAME_{0}', steps.spec.outputs.env_upper)] || vars.E2E_USER_MEMBER_USERNAME }}
-          E2E_USER_MEMBER_PASSWORD: ${{ secrets[format('E2E_USER_MEMBER_PASSWORD_{0}', steps.spec.outputs.env_upper)] || secrets.E2E_USER_MEMBER_PASSWORD }}
+          # ci-run.mjs picks the environment's own account when it has one, else the default.
+          E2E_USER_MEMBER_USERNAME: ${{ vars.E2E_USER_MEMBER_USERNAME }}
+          E2E_USER_MEMBER_USERNAME_DEV: ${{ vars.E2E_USER_MEMBER_USERNAME_DEV }}
+          E2E_USER_MEMBER_USERNAME_STAGING: ${{ vars.E2E_USER_MEMBER_USERNAME_STAGING }}
+          E2E_USER_MEMBER_USERNAME_PROD: ${{ vars.E2E_USER_MEMBER_USERNAME_PROD }}
+          E2E_USER_MEMBER_USERNAME_LOCAL: ${{ vars.E2E_USER_MEMBER_USERNAME_LOCAL }}
+          E2E_USER_MEMBER_PASSWORD: ${{ secrets.E2E_USER_MEMBER_PASSWORD }}
+          E2E_USER_MEMBER_PASSWORD_DEV: ${{ secrets.E2E_USER_MEMBER_PASSWORD_DEV }}
+          E2E_USER_MEMBER_PASSWORD_STAGING: ${{ secrets.E2E_USER_MEMBER_PASSWORD_STAGING }}
+          E2E_USER_MEMBER_PASSWORD_PROD: ${{ secrets.E2E_USER_MEMBER_PASSWORD_PROD }}
+          E2E_USER_MEMBER_PASSWORD_LOCAL: ${{ secrets.E2E_USER_MEMBER_PASSWORD_LOCAL }}
 
       - name: Upload results
         if: ${{ !cancelled() && steps.spec.outcome == 'success' }}

@@ -21,6 +21,20 @@ const env = { ...process.env };
 if (spec.appUrl) env.APP_URL = spec.appUrl;
 else delete env.APP_URL;
 
+// The environment's own test account when it has one (E2E_USER_MEMBER_*_PROD …), else the default.
+const suffix = String(spec.env).toUpperCase();
+for (const name of ['E2E_USER_MEMBER_USERNAME', 'E2E_USER_MEMBER_PASSWORD']) {
+  const own = process.env[`${name}_${suffix}`];
+  if (own) env[name] = own;
+}
+// Never the password itself — only enough to tell an unset or truncated secret.
+const password = env.E2E_USER_MEMBER_PASSWORD ?? '';
+console.log(
+  `account: ${env.E2E_USER_MEMBER_USERNAME || 'ali@gmail.com (default)'} · password ${password ? `set, ${password.length} characters` : 'NOT SET'}` +
+    `${process.env[`E2E_USER_MEMBER_PASSWORD_${suffix}`] ? ` (from E2E_USER_MEMBER_PASSWORD_${suffix})` : ''}`
+);
+if (!password) console.log('::warning::E2E_USER_MEMBER_PASSWORD is empty — add it under Settings → Secrets and variables → Actions.');
+
 console.log(`npx e2e ${args.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ')}`);
 const child = spawn(process.execPath, [cli, ...args], { stdio: 'inherit', env });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
