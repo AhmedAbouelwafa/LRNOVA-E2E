@@ -24,6 +24,7 @@ const TOKEN = randomUUID();
 const jobEnv = { ...process.env }; // what the test runs see: the user's own environment
 
 Object.assign(process.env, {
+  DASHBOARD_LOCAL: '1', // offers the "Local" environment: localhost:4200 on this machine
   DASHBOARD_PASSWORD: PASSWORD,
   DASHBOARD_INGEST_TOKEN: TOKEN,
   KV_REST_API_URL: 'http://memory.redis',

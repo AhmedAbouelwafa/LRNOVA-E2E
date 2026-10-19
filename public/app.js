@@ -28,6 +28,7 @@ const store = {
 
 const state = {
   catalog: null,
+  localBuild: false,
   tests: [],
   byFile: new Map(),
   groups: [],
@@ -108,7 +109,8 @@ $('#login-form').addEventListener('submit', async (event) => {
   const error = $('#login-error');
   error.hidden = true;
   try {
-    await api('session', { method: 'POST', body: JSON.stringify({ password: $('#login-password').value }) });
+    const session = await api('session', { method: 'POST', body: JSON.stringify({ password: $('#login-password').value }) });
+    state.localBuild = !!session.localBuild;
     $('#login-password').value = '';
     await startApp();
   } catch (e) {
@@ -144,6 +146,8 @@ async function loadCatalog() {
   const response = await fetch('catalog.json', { cache: 'no-store' });
   if (!response.ok) throw new Error('catalog.json is missing — the Vercel build did not run scripts/build-catalog.mjs');
   const catalog = await response.json();
+  // "Local" is offered only where it can run (npm run dashboard:local, or ENABLE_LOCAL_BUILD on Vercel).
+  catalog.environments = catalog.environments.filter((e) => !e.buildApp || state.localBuild);
   state.catalog = catalog;
   state.tests = catalog.tests.filter((t) => !t.skipped);
   state.byFile = new Map();
@@ -796,7 +800,8 @@ async function startApp() {
 
 (async () => {
   try {
-    const { signedIn } = await api('session');
+    const { signedIn, localBuild } = await api('session');
+    state.localBuild = !!localBuild;
     signedIn ? await startApp() : showLogin();
   } catch (e) {
     showLogin();

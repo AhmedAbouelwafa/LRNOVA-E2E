@@ -9,6 +9,7 @@ import {
   github,
   HttpError,
   keys,
+  localBuildEnabled,
   redis,
   requireUser,
   route,
@@ -42,6 +43,7 @@ export default route(['GET', 'POST'], async (req, res) => {
   const body = req.body ?? {};
   const target = environments().find((e) => e.id === body.env);
   if (!target) throw new HttpError(400, 'unknown environment');
+  if (target.buildApp && !localBuildEnabled()) throw new HttpError(400, `${target.label} runs only from npm run dashboard:local`);
   if (!target.buildApp && !target.url) throw new HttpError(400, `${target.label} has no URL yet (environments.json)`);
 
   envVar('DASHBOARD_INGEST_TOKEN'); // the CI job cannot report back without it

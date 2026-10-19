@@ -20,9 +20,9 @@
   },
   {
     "id": "local",
-    "label": "Local build",
+    "label": "Local (localhost:4200)",
     "url": null,
     "buildApp": true,
-    "description": "Builds the app from its repository on the CI machine and tests that build (development configuration)."
+    "description": "The app on the machine that runs the tests: localhost:4200 under npm run dashboard:local (started if not running). Hidden on Vercel unless ENABLE_LOCAL_BUILD=1 and APP_REPO are set up, so CI can build it."
   }
 ]

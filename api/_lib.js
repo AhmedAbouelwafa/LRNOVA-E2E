@@ -161,6 +161,15 @@ export async function saveRun(run) {
 
 // ── Environments (environments.json, bundled with the functions) ────────
 
+/**
+ * "Local" (an environment with buildApp) runs the app on the machine that runs the
+ * tests: always available under `npm run dashboard:local`, and on Vercel only once
+ * the CI job can build it (APP_REPO set up on GitHub) and ENABLE_LOCAL_BUILD=1 says so.
+ */
+export function localBuildEnabled() {
+  return process.env.DASHBOARD_LOCAL === '1' || process.env.ENABLE_LOCAL_BUILD === '1';
+}
+
 export function environments() {
   const file = path.join(process.cwd(), 'environments.json');
   return JSON.parse(readFileSync(file, 'utf8'));
