@@ -1,11 +1,12 @@
 // Shared helpers for the dashboard's API routes (Vercel functions).
 //
-// Storage is Upstash Redis over its REST API (add it to the Vercel project
-// from the Marketplace; it sets KV_REST_API_URL / KV_REST_API_TOKEN, or
-// UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN). No npm packages: plain fetch.
+// Storage is Redis, whichever kind the Vercel project has: Upstash over its
+// REST API (KV_REST_API_URL / KV_REST_API_TOKEN, or UPSTASH_REDIS_REST_URL /
+// UPSTASH_REDIS_REST_TOKEN), else any Redis over REDIS_URL.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { createClient } from 'redis';
 
 export const RUN_TTL_SECONDS = 60 * 60 * 24 * 30;
 const COOKIE = 'e2e_dashboard';
@@ -84,18 +85,51 @@ export function requireCi(req) {
   if (!token || !safeEqual(token, env('DASHBOARD_INGEST_TOKEN'))) throw new HttpError(401, 'bad ingest token');
 }
 
-// ── Redis (Upstash REST) ─────────────────────────────────────────────────
+// ── Redis ────────────────────────────────────────────────────────────────
 
-function redisConfig() {
+function restConfig() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) throw new HttpError(500, 'Redis is not connected: add Upstash Redis to the Vercel project');
-  return { url: url.replace(/\/+$/, ''), token };
+  return url && token ? { url: url.replace(/\/+$/, ''), token } : null;
 }
 
-/** Runs several Redis commands in one round trip; returns each result. */
+// One connection per function instance, reused while Vercel keeps it warm.
+let tcpClient = null;
+function tcp(url) {
+  if (!tcpClient) {
+    const client = createClient({ url, socket: { connectTimeout: 5000 } });
+    client.on('error', (error) => console.error('redis:', error.message));
+    tcpClient = client.connect().then(
+      () => client,
+      (error) => {
+        tcpClient = null;
+        throw new HttpError(502, `Redis: ${error.message}`);
+      }
+    );
+  }
+  return tcpClient;
+}
+
+/** Runs several Redis commands (each an array like ['GET', key]); returns each result. */
 export async function redis(...commands) {
-  const { url, token } = redisConfig();
+  const rest = restConfig();
+  if (rest) return redisRest(rest, commands);
+
+  const url = process.env.REDIS_URL || process.env.KV_URL;
+  if (!url) throw new HttpError(500, 'Redis is not connected: add a Redis database to the Vercel project (Storage tab)');
+  const client = await tcp(url);
+  try {
+    const results = [];
+    for (const command of commands) results.push(await client.sendCommand(command.map(String)));
+    return results;
+  } catch (error) {
+    // A dropped connection is rebuilt on the next request.
+    if (!client.isReady) tcpClient = null;
+    throw new HttpError(502, `Redis: ${error.message}`);
+  }
+}
+
+async function redisRest({ url, token }, commands) {
   const response = await fetch(`${url}/pipeline`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },

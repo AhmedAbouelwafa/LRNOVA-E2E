@@ -31,5 +31,8 @@
     "test:homework-agent": "e2e run tests/tools/homework-agent",
     "test:persona-clone": "e2e run tests/tools/persona-clone",
     "test:gaming-agent": "e2e run tests/tools/gaming-agent"
+  },
+  "dependencies": {
+    "redis": "6.3.0"
   }
 }
