@@ -1,0 +1,95 @@
+# Runs the tests the dashboard asked for. Started by the dashboard (Vercel)
+# through workflow_dispatch with a run key; the job fetches what to run from
+# the dashboard and streams its progress back (reporters/dashboard.ts).
+#
+# Repository secrets:   OPENROUTER_API_KEY, E2E_USER_MEMBER_PASSWORD, DASHBOARD_INGEST_TOKEN
+#                       optional per environment: E2E_USER_MEMBER_PASSWORD_DEV / _STAGING / _PROD / _LOCAL
+#                       for the "local" environment: APP_REPO_TOKEN (read access to the app repository)
+# Repository variables: DASHBOARD_URL (the Vercel URL)
+#                       optional: E2E_USER_MEMBER_USERNAME (and _DEV / _STAGING / _PROD / _LOCAL)
+#                       for the "local" environment: APP_REPO (owner/name), APP_REF (branch, default main)
+name: e2e dashboard
+run-name: ${{ inputs.label || inputs.run_key }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_key:
+        description: Run key the dashboard created
+        required: true
+      label:
+        description: Shown as the run name
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+      DASHBOARD_RUN_KEY: ${{ inputs.run_key }}
+      DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Fetch what to run
+        id: spec
+        run: node scripts/ci-spec.mjs
+
+      - run: npm ci
+
+      - name: Install browsers
+        run: npx @e2e-dev/web install chromium --with-deps
+
+      # Only the "local" environment: build the app from its repository and let
+      # the runner start it (e2e.config.ts reads APP_DIR).
+      - name: Check out the app
+        if: steps.spec.outputs.build_app == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ vars.APP_REPO }}
+          ref: ${{ vars.APP_REF || 'main' }}
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: app
+      - name: Install the app
+        if: steps.spec.outputs.build_app == 'true'
+        working-directory: app
+        run: npm ci
+
+      # The replay cache lets agent steps replay without model calls, run to run.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .e2e/cache
+          key: e2e-cache-${{ steps.spec.outputs.env }}-${{ github.run_id }}
+          restore-keys: e2e-cache-${{ steps.spec.outputs.env }}-
+
+      - name: Run the tests
+        run: node scripts/ci-run.mjs
+        env:
+          APP_DIR: ${{ steps.spec.outputs.build_app == 'true' && 'app' || '' }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          E2E_USER_MEMBER_USERNAME: ${{ vars[format('E2E_USER_MEMBER_USERNAME_{0}', steps.spec.outputs.env_upper)] || vars.E2E_USER_MEMBER_USERNAME }}
+          E2E_USER_MEMBER_PASSWORD: ${{ secrets[format('E2E_USER_MEMBER_PASSWORD_{0}', steps.spec.outputs.env_upper)] || secrets.E2E_USER_MEMBER_PASSWORD }}
+
+      - name: Upload results
+        if: ${{ !cancelled() && steps.spec.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-results
+          path: |
+            .e2e/report.json
+            .e2e/results
+            .e2e/logs
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Tell the dashboard the job ended
+        if: always()
+        run: node scripts/ci-finish.mjs "${{ job.status }}"

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "dev",
+    "label": "Dev",
+    "url": "https://dev.lrnova.ai",
+    "description": "The development deployment."
+  },
+  {
+    "id": "staging",
+    "label": "Staging",
+    "url": "https://staging.lrnova.ai",
+    "description": "The staging deployment."
+  },
+  {
+    "id": "prod",
+    "label": "Production",
+    "url": "https://lrnova.ai",
+    "description": "The live site. Some tests sign in and submit real forms.",
+    "confirm": true
+  },
+  {
+    "id": "local",
+    "label": "Local build",
+    "url": null,
+    "buildApp": true,
+    "description": "Builds the app from its repository on the CI machine and tests that build (development configuration)."
+  }
+]

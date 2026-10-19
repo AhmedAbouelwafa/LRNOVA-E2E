@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LRNOVA E2E</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23704cbd'/><path d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Sign-in -->
+  <section id="login" class="login" hidden>
+    <form id="login-form" class="login__card">
+      <div class="brand brand--big"><span class="brand__mark">✓</span> LRNOVA E2E</div>
+      <p class="muted">Enter the team password to run and watch the end-to-end tests.</p>
+      <label class="field">
+        <span>Password</span>
+        <input id="login-password" type="password" autocomplete="current-password" required />
+      </label>
+      <p id="login-error" class="error" hidden></p>
+      <button class="btn btn--primary" type="submit">Sign in</button>
+    </form>
+  </section>
+
+  <!-- App -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand__mark">✓</span> LRNOVA E2E</div>
+
+      <div class="topbar__controls">
+        <label class="control">
+          <span>Environment</span>
+          <select id="env"></select>
+        </label>
+        <label class="switch" title="Tests tagged #agent call the AI model (and count against its daily limit).">
+          <input id="skip-agent" type="checkbox" />
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+          <span>Skip AI-agent tests</span>
+        </label>
+        <label class="control control--name">
+          <span>Your name</span>
+          <input id="by" type="text" maxlength="60" placeholder="Shown on the run" />
+        </label>
+      </div>
+
+      <div class="topbar__end">
+        <button id="theme" class="icon-btn" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">◐</button>
+        <button id="logout" class="btn btn--ghost" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Tests -->
+      <section class="panel panel--tests" aria-label="Tests">
+        <div class="panel__head">
+          <div>
+            <h2>Tests</h2>
+            <p id="catalog-meta" class="muted small"></p>
+          </div>
+          <div class="panel__actions">
+            <button id="run-selected" class="btn" type="button" disabled>Run selected</button>
+            <button id="run-all" class="btn btn--primary" type="button">▶ Run all</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <input id="search" class="search" type="search" placeholder="Search tests…" />
+          <button id="select-none" class="btn btn--ghost btn--sm" type="button">Clear selection</button>
+          <button id="expand-all" class="btn btn--ghost btn--sm" type="button">Expand all</button>
+        </div>
+        <div id="tree" class="tree" role="tree"></div>
+      </section>
+
+      <!-- Runs -->
+      <section class="panel panel--runs" aria-label="Runs">
+        <div id="runs-view">
+          <div class="panel__head">
+            <div>
+              <h2>Runs</h2>
+              <p class="muted small">Each run executes on GitHub Actions and reports here live.</p>
+            </div>
+            <button id="refresh-runs" class="btn btn--ghost btn--sm" type="button">Refresh</button>
+          </div>
+          <div id="runs" class="runs"></div>
+        </div>
+
+        <div id="run-view" hidden>
+          <div class="run-head">
+            <button id="back" class="btn btn--ghost btn--sm" type="button">← All runs</button>
+            <div class="run-head__links" id="run-links"></div>
+          </div>
+          <div id="run-summary"></div>
+          <div class="toolbar toolbar--run">
+            <div class="tabs" role="tablist" id="run-filter">
+              <button role="tab" data-filter="all" class="tab is-active" type="button">All</button>
+              <button role="tab" data-filter="failed" class="tab" type="button">Failed</button>
+              <button role="tab" data-filter="running" class="tab" type="button">Running</button>
+              <button role="tab" data-filter="passed" class="tab" type="button">Passed</button>
+            </div>
+          </div>
+          <div id="run-setup" class="setup-log"></div>
+          <div id="run-tests" class="run-tests"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

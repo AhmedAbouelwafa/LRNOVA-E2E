@@ -1,0 +1,35 @@
+{
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "devDependencies": {
+    "@e2e-dev/web": "^0.14.0",
+    "@openrouter/ai-sdk-provider": "^3.0.0",
+    "ai": "^7.0.0",
+    "e2e": "^0.19.0",
+    "zod": "^4.1.8"
+  },
+  "scripts": {
+    "test:e2e": "e2e run",
+    "dashboard:catalog": "node scripts/build-catalog.mjs",
+    "dashboard:local": "node scripts/dashboard-local.mjs",
+    "test:auth": "e2e run tests/auth",
+    "test:smoke": "e2e run tests/smoke",
+    "test:tools": "e2e run tests/tools",
+    "test:tools:no-agent": "e2e run tests/tools --exclude-tag agent",
+    "test:full-course-script": "e2e run tests/tools/full-course-script",
+    "test:single-video-script": "e2e run tests/tools/single-video-script",
+    "test:assessment": "e2e run tests/tools/assessment",
+    "test:topic-generator": "e2e run tests/tools/topic-generator",
+    "test:activity-generator": "e2e run tests/tools/activity-generator",
+    "test:full-course-content": "e2e run tests/tools/full-course-content",
+    "test:video-ai-generator": "e2e run tests/tools/video-ai-generator",
+    "test:text-to-video-generator": "e2e run tests/tools/text-to-video-generator",
+    "test:notebook-agent": "e2e run tests/tools/notebook-agent",
+    "test:homework-agent": "e2e run tests/tools/homework-agent",
+    "test:persona-clone": "e2e run tests/tools/persona-clone",
+    "test:gaming-agent": "e2e run tests/tools/gaming-agent"
+  }
+}
