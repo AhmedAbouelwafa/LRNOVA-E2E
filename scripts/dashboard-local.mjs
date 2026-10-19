@@ -57,6 +57,13 @@ function redis([command, ...a]) {
     case 'LRANGE': return range(db.get(a[0]) ?? [], a[1], a[2]);
     case 'LLEN': return (db.get(a[0]) ?? []).length;
     case 'EXPIRE': return 1;
+    case 'DEL': return a.filter((k) => db.delete(k)).length;
+    case 'LREM': {
+      const l = db.get(a[0]) ?? [];
+      const kept = l.filter((v) => v !== a[2]);
+      db.set(a[0], kept);
+      return l.length - kept.length;
+    }
     default: throw new Error(`dashboard-local: Redis command ${command} is not emulated`);
   }
 }

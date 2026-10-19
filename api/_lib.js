@@ -159,6 +159,25 @@ export async function saveRun(run) {
   await redis(['SET', keys.run(run.key), JSON.stringify(run), 'EX', RUN_TTL_SECONDS]);
 }
 
+/**
+ * Deletes runs and everything they stored. A run still going is cancelled on
+ * GitHub first (best effort: a job that already ended answers 409, which is fine).
+ */
+export async function deleteRuns(runKeys) {
+  if (!runKeys.length) return;
+  const [raws] = await redis(['MGET', ...runKeys.map(keys.run)]);
+  for (const raw of raws) {
+    const run = raw ? JSON.parse(raw) : null;
+    if (run?.ghRunId && !FINAL.has(run.status)) {
+      await github(`/actions/runs/${run.ghRunId}/cancel`, { method: 'POST' }).catch(() => {});
+    }
+  }
+  await redis(
+    ['DEL', ...runKeys.flatMap((key) => [keys.run(key), keys.spec(key), keys.events(key)])],
+    ...runKeys.map((key) => ['LREM', keys.runs, 0, key])
+  );
+}
+
 // ── Environments (environments.json, bundled with the functions) ────────
 
 /**

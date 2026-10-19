@@ -4,6 +4,8 @@
 
 const FINAL = new Set(['passed', 'failed', 'cancelled', 'error']);
 const POLL_MS = 2000;
+const TRASH_ICON =
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
 
 const $ = (selector) => document.querySelector(selector);
 const esc = (value) =>
@@ -411,26 +413,53 @@ function renderRuns() {
   }
   $('#runs').innerHTML = state.runs
     .map(
-      (run) => `<button class="run-card" data-key="${esc(run.key)}" type="button">
-        <span class="run-card__title">${esc(run.label)}</span>
-        ${pill(run.status)}
-        <span class="run-card__meta">
-          <span>${esc(run.envLabel)}</span>
-          ${run.excludeAgent ? '<span>no AI tests</span>' : ''}
-          ${run.by ? `<span>by ${esc(run.by)}</span>` : ''}
-          <span>${esc(ago(run.createdAt))}</span>
-          ${runCountsLine(run) ? `<span>${esc(runCountsLine(run))}</span>` : ''}
-        </span>
-      </button>`
+      (run) => `<div class="run-item">
+        <button class="run-card" data-key="${esc(run.key)}" type="button">
+          <span class="run-card__title">${esc(run.label)}</span>
+          ${pill(run.status)}
+          <span class="run-card__meta">
+            <span>${esc(run.envLabel)}</span>
+            ${run.excludeAgent ? '<span>no AI tests</span>' : ''}
+            ${run.by ? `<span>by ${esc(run.by)}</span>` : ''}
+            <span>${esc(ago(run.createdAt))}</span>
+            ${runCountsLine(run) ? `<span>${esc(runCountsLine(run))}</span>` : ''}
+          </span>
+        </button>
+        <button class="run-del" data-delete="${esc(run.key)}" type="button" title="Delete this run" aria-label="Delete run: ${esc(run.label)}">${TRASH_ICON}</button>
+      </div>`
     )
     .join('');
+  $('#clear-runs').disabled = !state.runs.length;
 }
 
-$('#runs').addEventListener('click', (event) => {
+/** Deletes runs (all of them when `key` is omitted); a run still going is cancelled first. */
+async function deleteRuns(key) {
+  const running = key ? !FINAL.has(state.runs.find((r) => r.key === key)?.status ?? state.current?.run?.status) : state.runs.some((r) => !FINAL.has(r.status));
+  const question = key ? 'Delete this run and its results?' : `Delete all ${state.runs.length} runs and their results?`;
+  if (!confirm(`${question}${running ? '\n\nRuns still going are cancelled first.' : ''}`)) return false;
+  try {
+    await api(key ? `runs/${encodeURIComponent(key)}` : 'runs', { method: 'DELETE' });
+    toast(key ? 'Run deleted.' : 'All runs deleted.');
+    return true;
+  } catch (e) {
+    toast(e.message, true);
+    return false;
+  }
+}
+
+$('#runs').addEventListener('click', async (event) => {
+  const del = event.target.closest('[data-delete]');
+  if (del) {
+    if (await deleteRuns(del.dataset.delete)) loadRuns();
+    return;
+  }
   const card = event.target.closest('.run-card');
   if (card) location.hash = `run=${card.dataset.key}`;
 });
 $('#refresh-runs').addEventListener('click', loadRuns);
+$('#clear-runs').addEventListener('click', async () => {
+  if (await deleteRuns()) loadRuns();
+});
 
 // ── One run: replaying its events ────────────────────────────────────────
 
@@ -626,7 +655,8 @@ function renderRun() {
     run.ghUrl ? `<a class="link" href="${esc(run.ghUrl)}" target="_blank" rel="noopener">GitHub Actions log ↗</a>` : '',
     run.ghUrl && FINAL.has(run.status) ? `<a class="link" href="${esc(run.ghUrl)}#artifacts" target="_blank" rel="noopener">Download results ↗</a>` : '',
     FINAL.has(run.status) && failedTests.length ? `<button class="btn btn--sm" id="rerun-failed" type="button">Re-run ${failedTests.length} failed</button>` : '',
-    !FINAL.has(run.status) && !run.cancelRequested ? '<button class="btn btn--sm btn--danger" id="cancel-run" type="button">Cancel run</button>' : ''
+    !FINAL.has(run.status) && !run.cancelRequested ? '<button class="btn btn--sm btn--danger" id="cancel-run" type="button">Cancel run</button>' : '',
+    '<button class="btn btn--sm btn--ghost btn--danger" id="delete-run" type="button">Delete run</button>'
   ].join('');
 
   $('#run-setup').innerHTML = [...model.setup.values()]
@@ -742,6 +772,13 @@ $('#run-filter').addEventListener('click', (event) => {
 });
 
 $('#run-links').addEventListener('click', async (event) => {
+  if (event.target.id === 'delete-run') {
+    const { key } = state.current;
+    stopPolling();
+    if (await deleteRuns(key)) location.hash = '';
+    else poll(state.current);
+    return;
+  }
   if (event.target.id === 'cancel-run') {
     if (!confirm('Cancel this run?')) return;
     try {

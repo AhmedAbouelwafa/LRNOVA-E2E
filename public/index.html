@@ -78,7 +78,10 @@
               <h2>Runs</h2>
               <p class="muted small">Each run executes on GitHub Actions and reports here live.</p>
             </div>
-            <button id="refresh-runs" class="btn btn--ghost btn--sm" type="button">Refresh</button>
+            <div class="panel__actions">
+              <button id="refresh-runs" class="btn btn--ghost btn--sm" type="button">Refresh</button>
+              <button id="clear-runs" class="btn btn--ghost btn--sm btn--danger" type="button">Clear all</button>
+            </div>
           </div>
           <div id="runs" class="runs"></div>
         </div>

@@ -1,10 +1,12 @@
-// GET  → the latest runs, newest first.
-// POST → start a run: stores what to run, then dispatches the GitHub workflow.
+// GET    → the latest runs, newest first.
+// DELETE → delete every run (cancelling any still going).
+// POST   → start a run: stores what to run, then dispatches the GitHub workflow.
 //   body: { env, files: string[], titles: string[][], excludeAgent, label, by, testCount }
 //   `files` alone runs those files whole; with `titles`, only the tests whose
 //   title path is listed (each becomes an exact --grep).
 import { randomUUID } from 'node:crypto';
 import {
+  deleteRuns,
   environments,
   github,
   HttpError,
@@ -29,8 +31,15 @@ function strings(value, field) {
   return value;
 }
 
-export default route(['GET', 'POST'], async (req, res) => {
+export default route(['GET', 'POST', 'DELETE'], async (req, res) => {
   requireUser(req);
+
+  if (req.method === 'DELETE') {
+    const [ids] = await redis(['LRANGE', keys.runs, 0, -1]);
+    await deleteRuns(ids ?? []);
+    res.json({ deleted: ids ?? [] });
+    return;
+  }
 
   if (req.method === 'GET') {
     const [ids] = await redis(['LRANGE', keys.runs, 0, 49]);

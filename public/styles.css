@@ -604,7 +604,37 @@ button:focus-visible {
   gap: 8px;
 }
 
+.run-item {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.run-del {
+  flex-shrink: 0;
+  width: 40px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.run-del {
+  display: grid;
+  place-items: center;
+}
+
+.run-del:hover {
+  border-color: var(--fail);
+  background: var(--fail-soft);
+  color: var(--fail);
+}
+
 .run-card {
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 4px 12px;
