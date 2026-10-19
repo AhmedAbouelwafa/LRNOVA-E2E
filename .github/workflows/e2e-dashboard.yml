@@ -42,6 +42,8 @@ jobs:
       - name: Fetch what to run
         id: spec
         run: node scripts/ci-spec.mjs
+        env:
+          APP_REPO: ${{ vars.APP_REPO }}
 
       - run: npm ci
 

@@ -26,6 +26,20 @@ if (!response.ok) {
 }
 
 const spec = await response.json();
+
+// "Local build" checks the app out of its own repository: say so plainly if that is not set up.
+if (spec.buildApp && !process.env.APP_REPO) {
+  const message =
+    'The "Local build" environment needs the app repository: add the repository variable APP_REPO (owner/name) and the secret APP_REPO_TOKEN on GitHub — or pick Dev, Staging or Production.';
+  console.error(message);
+  await fetch(`${url}/api/ingest`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ key, events: [{ type: 'run-error', at: new Date().toISOString(), error: { code: 'APP_REPO_MISSING', message } }] })
+  }).catch(() => {});
+  process.exit(1);
+}
+
 writeFileSync('.e2e-spec.json', JSON.stringify(spec, null, 2));
 console.log(JSON.stringify(spec, null, 2));
 
