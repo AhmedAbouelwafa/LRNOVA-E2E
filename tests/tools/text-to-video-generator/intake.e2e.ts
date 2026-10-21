@@ -8,14 +8,15 @@ import { expectCacheOutcome } from '../../helpers/agent.ts';
 import { ANSWERS, PLACEHOLDER, ROUTE, STORYBOARD, TAB, TEXT_TO_VIDEO_CONTEXT, TOOL_NAME, TOOL_NAME_AR, TOTAL, VIDEO } from './fixture.ts';
 
 describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], session: 'member', timeout: 180_000 }, () => {
-  test('opens on the video idea, one of ten questions', async ({ app, screen, browser }) => {
+  test('opens on the style, already on Realistic, one of ten questions', async ({ app, screen, browser }) => {
     await mockTextVideoApi(browser, { storyboard: STORYBOARD });
     await app.open(ROUTE);
 
     await expect(screen.getByRole('heading', TOOL_NAME)).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText('Video Idea')).toBeVisible();
+    await expect(screen.getByText('Question 1/10')).toBeVisible();
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic');
     await expect(progress(screen, 0, TOTAL)).toBeVisible();
-    await expect(screen.getByRole('button', 'Continue')).toBeDisabled();
+    await expect(screen.getByRole('button', 'Continue')).toBeEnabled();
     // Nothing to show yet, so no canvas
     await expect(screen.getByRole('tab', TAB.storyboard)).toHaveCount(0);
   });
@@ -23,6 +24,7 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
   test('a video idea needs twenty characters', async ({ app, screen, browser }) => {
     await mockTextVideoApi(browser, { storyboard: STORYBOARD });
     await app.open(ROUTE);
+    await answerAll(screen, ANSWERS.slice(0, 1), TOTAL);
 
     const idea = screen.getByPlaceholder(PLACEHOLDER.prompt);
     await idea.fill('Too short');
@@ -54,9 +56,8 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
   test('the style picker changes the style, and a style that is not ready cannot be picked', async ({ app, screen, browser }) => {
     await mockTextVideoApi(browser, { storyboard: STORYBOARD });
     await app.open(ROUTE);
-    await answerAll(screen, ANSWERS.slice(0, 4), TOTAL);
 
-    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic');
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic', { timeout: 20_000 });
     await browser.locator('.ttv-picker').tap();
     const dialog = screen.getByRole('dialog');
     await expect(dialog.getByRole('heading', 'Choose a video style')).toBeVisible();
@@ -113,11 +114,11 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
   test('switching the site to Arabic keeps the answers given', async ({ app, screen, browser }) => {
     await mockTextVideoApi(browser, { storyboard: STORYBOARD });
     await app.open(ROUTE);
-    await answerAll(screen, ANSWERS.slice(0, 4), TOTAL);
+    await answerAll(screen, ANSWERS.slice(0, 5), TOTAL);
 
     await switchToArabic(screen);
     await expect(screen.getByRole('heading', TOOL_NAME_AR)).toBeVisible({ timeout: 20_000 });
-    await expect(progress(screen, 4, TOTAL)).toBeVisible();
+    await expect(progress(screen, 5, TOTAL)).toBeVisible();
     await expect(screen.getByText(VIDEO.prompt)).toBeVisible();
     await expect(screen.getByText(VIDEO.audience)).toBeVisible();
     await expect(screen.getByText('متوسط')).toBeVisible(); // Intermediate
@@ -129,9 +130,10 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
     async ({ app, screen, browser, agent }) => {
       await mockTextVideoApi(browser, { storyboard: STORYBOARD });
       await app.open(ROUTE);
+      await answerAll(screen, ANSWERS.slice(0, 1), TOTAL);
 
       expectCacheOutcome(await agent.act('type {idea} as the video idea, then press Continue', { params: { idea: VIDEO.prompt } }));
-      await expect(progress(screen, 1, TOTAL)).toBeVisible();
+      await expect(progress(screen, 2, TOTAL)).toBeVisible();
       await expect(screen.getByText(VIDEO.prompt)).toBeVisible();
     }
   );

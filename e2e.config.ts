@@ -2,12 +2,14 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { E2EConfig } from 'e2e';
 import { web } from '@e2e-dev/web';
-import { openrouter } from '@openrouter/ai-sdk-provider';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { dashboardReporter } from './reporters/dashboard.ts';
 
-// The runner loads no .env itself; OPENROUTER_API_KEY lives there (git-ignored).
+// The runner loads no .env itself; GOOGLE_API_KEY lives there (git-ignored).
 const envFile = path.join(import.meta.dirname, '.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+
+const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 // The Angular app under test lives beside this folder; CI checks it out
 // elsewhere and says where with APP_DIR.
@@ -23,12 +25,10 @@ export default {
   // `list` in the terminal; the dashboard reporter streams to the test
   // dashboard only when the CI job configures it.
   reporters: ['list', dashboardReporter],
-  // OpenRouter reads OPENROUTER_API_KEY. A `:free` model costs no credits;
-  // it must support tool calls. This one is text-only: the agent reads the
-  // page's accessibility tree, so `vision: true` judgments are unavailable.
+  // Gemini through the Google AI Studio key in GOOGLE_API_KEY.
   agents: {
     default: {
-      model: openrouter('nvidia/nemotron-3-super-120b-a12b:free'),
+      model: google('gemini-2.5-flash'),
       system: 'You are a thorough QA agent. Verify every outcome.',
     },
   },

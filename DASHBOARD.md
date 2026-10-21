@@ -62,7 +62,7 @@ git push -u origin main
 
 | الاسم | القيمة |
 | --- | --- |
-| `OPENROUTER_API_KEY` | نفس اللي في `.env` |
+| `GOOGLE_API_KEY` | نفس اللي في `.env` |
 | `E2E_USER_MEMBER_PASSWORD` | باسورد حساب التست (نفس اللي في `.env`) |
 | `DASHBOARD_INGEST_TOKEN` | نص عشوائي طويل. ولّده بـ `node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"`، ونفس القيمة هتتحط في Vercel |
 | `E2E_USER_MEMBER_PASSWORD_PROD` … *(اختياري)* | لو بيئة معيّنة ليها حساب مختلف: `_DEV` / `_STAGING` / `_PROD` / `_LOCAL` |

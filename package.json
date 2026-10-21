@@ -5,6 +5,7 @@
     "node": "24.x"
   },
   "devDependencies": {
+    "@ai-sdk/google": "^4.0.101",
     "@e2e-dev/web": "^0.14.0",
     "@openrouter/ai-sdk-provider": "^3.0.0",
     "ai": "^7.0.0",

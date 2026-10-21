@@ -7,6 +7,7 @@ import { progress } from '../../helpers/questionnaire.ts';
 import { switchToArabic } from '../../helpers/language.ts';
 import {
   answerIntake,
+  CHOOSE_STYLE,
   CONTENT_TEXT,
   ENDPOINT,
   INPUTS,
@@ -15,7 +16,6 @@ import {
   NOTEBOOK,
   OUTPUT,
   pdfGeneration,
-  PLACEHOLDER,
   ROUTE,
   TOOL_ID,
   TOTAL
@@ -124,7 +124,7 @@ describe('notebook agent: generate', { tags: ['tools', 'notebook-agent'], sessio
     await screen.getByRole('button', 'New Project').tap();
     await expect(screen.getByText('Question 1/11')).toBeVisible();
     await expect(progress(screen, 0, TOTAL)).toBeVisible();
-    await expect(screen.getByPlaceholder(PLACEHOLDER.subject)).toHaveValue('');
+    await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible();
     await expect(browser).toHaveURL(ROUTE);
   });
 
@@ -288,6 +288,6 @@ describe('notebook agent: generate', { tags: ['tools', 'notebook-agent'], sessio
     await app.open(`${ROUTE}?projectId=${PROJECT_ID}`);
 
     await expect(screen.getByRole('alert')).toContainText('This project no longer exists.', { timeout: 20_000 });
-    await expect(screen.getByPlaceholder(PLACEHOLDER.subject)).toBeVisible();
+    await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible();
   });
 });

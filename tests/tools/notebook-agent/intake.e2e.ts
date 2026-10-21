@@ -4,16 +4,17 @@ import { mockToolApi, mockUpload, UPLOADED_FILE_URL } from '../../helpers/tool-a
 import { progress } from '../../helpers/questionnaire.ts';
 import { switchToArabic } from '../../helpers/language.ts';
 import { expectCacheOutcome } from '../../helpers/agent.ts';
-import { answerIntake, ENDPOINT, NOTEBOOK, NOTEBOOK_CONTEXT, OUTPUT, pickTheme, PLACEHOLDER, ROUTE, STEPS, TOOL_NAME, TOTAL } from './fixture.ts';
+import { answerIntake, CHOOSE_STYLE, ENDPOINT, NOTEBOOK, NOTEBOOK_CONTEXT, OUTPUT, pickTheme, PLACEHOLDER, ROUTE, STEPS, TOOL_NAME, TOTAL } from './fixture.ts';
 
 describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session: 'member', timeout: 180_000 }, () => {
-  test('opens on the subject, one of eleven questions, with nothing to show yet', async ({ app, screen, browser }) => {
+  test('opens on the style, one of eleven questions, with nothing to show yet', async ({ app, screen, browser }) => {
     await mockToolApi(browser, ENDPOINT, OUTPUT);
     await app.open(ROUTE);
 
     await expect(screen.getByRole('heading', TOOL_NAME)).toBeVisible({ timeout: 20_000 });
     await expect(screen.getByText('Question 1/11')).toBeVisible();
     await expect(progress(screen, 0, TOTAL)).toBeVisible();
+    await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible();
     await expect(screen.getByRole('button', 'Continue')).toBeDisabled();
     await expect(screen.getByRole('tab', /^Content/)).toHaveCount(0);
   });
@@ -37,11 +38,11 @@ describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session:
   test('the topic level is optional, and a required question waits for its answer', async ({ app, screen, browser }) => {
     await mockToolApi(browser, ENDPOINT, OUTPUT);
     await app.open(ROUTE);
-    await answerIntake(screen, 2);
+    await answerIntake(screen, 3);
 
     // Topic level: Continue without picking one
     await screen.getByRole('button', 'Continue').tap();
-    await expect(progress(screen, 3, TOTAL)).toBeVisible();
+    await expect(progress(screen, 4, TOTAL)).toBeVisible();
     await expect(screen.getByText('Skipped')).toBeVisible();
     // Grade is required
     await expect(screen.getByRole('button', 'Continue')).toBeDisabled();
@@ -50,7 +51,7 @@ describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session:
   test('the detail level is picked from its cards', async ({ app, screen, browser }) => {
     await mockToolApi(browser, ENDPOINT, OUTPUT);
     await app.open(ROUTE);
-    await answerIntake(screen, 5);
+    await answerIntake(screen, 6);
 
     await expect(screen.getByRole('radio', /Concise/)).toHaveAttribute('aria-checked', 'true');
     await screen.getByRole('radio', /Extensive/).tap();
@@ -59,14 +60,14 @@ describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session:
     await expect(screen.getByText('Extensive')).toBeVisible();
   });
 
-  test('the theme is required, and Cancel in its popup keeps none', async ({ app, screen, browser }) => {
+  test('the style is required, and Cancel in its popup keeps none', async ({ app, screen, browser }) => {
     await mockToolApi(browser, ENDPOINT, OUTPUT);
     await app.open(ROUTE);
-    await answerIntake(screen, 6);
+    await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible({ timeout: 20_000 });
 
     await expect(screen.getByRole('button', 'Continue')).toBeDisabled();
-    await screen.getByRole('button', 'Choose a theme').tap();
-    await screen.getByRole('dialog').getByRole('button', /^Cinematic/).tap();
+    await screen.getByRole('button', CHOOSE_STYLE).tap();
+    await screen.getByRole('dialog').getByRole('button', /^3D Cartoon/).tap();
     await screen.getByRole('dialog').getByRole('button', 'Cancel').tap();
     await expect(screen.getByRole('button', 'Continue')).toBeDisabled();
 
@@ -93,11 +94,11 @@ describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session:
   test('switching the site to Arabic keeps the answers given', async ({ app, screen, browser }) => {
     await mockToolApi(browser, ENDPOINT, OUTPUT);
     await app.open(ROUTE);
-    await answerIntake(screen, 4);
+    await answerIntake(screen, 5);
 
     await switchToArabic(screen);
     await expect(screen.getByText('متوسط')).toBeVisible({ timeout: 20_000 }); // Intermediate
-    await expect(progress(screen, 4, TOTAL)).toBeVisible();
+    await expect(progress(screen, 5, TOTAL)).toBeVisible();
     await expect(screen.getByText(NOTEBOOK.subject)).toBeVisible();
     await expect(screen.getByText(NOTEBOOK.grade)).toBeVisible();
   });
@@ -108,10 +109,11 @@ describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session:
     async ({ app, screen, browser, agent }) => {
       await mockToolApi(browser, ENDPOINT, OUTPUT);
       await app.open(ROUTE);
+      await answerIntake(screen, 1);
       await expect(screen.getByPlaceholder(PLACEHOLDER.subject)).toBeVisible({ timeout: 20_000 });
 
       expectCacheOutcome(await agent.act('answer the Subject with {subject}, then press Continue', { params: { subject: NOTEBOOK.subject } }));
-      await expect(progress(screen, 1, TOTAL)).toBeVisible();
+      await expect(progress(screen, 2, TOTAL)).toBeVisible();
       await expect(screen.getByText(NOTEBOOK.subject)).toBeVisible();
     }
   );

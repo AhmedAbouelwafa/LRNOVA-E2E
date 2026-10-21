@@ -2,7 +2,7 @@
 # through workflow_dispatch with a run key; the job fetches what to run from
 # the dashboard and streams its progress back (reporters/dashboard.ts).
 #
-# Repository secrets:   OPENROUTER_API_KEY, E2E_USER_MEMBER_PASSWORD, DASHBOARD_INGEST_TOKEN
+# Repository secrets:   GOOGLE_API_KEY, E2E_USER_MEMBER_PASSWORD, DASHBOARD_INGEST_TOKEN
 #                       optional per environment: E2E_USER_MEMBER_PASSWORD_DEV / _STAGING / _PROD / _LOCAL
 #                       for the "local" environment: APP_REPO_TOKEN (read access to the app repository)
 # Repository variables: DASHBOARD_URL (the Vercel URL; a secret of that name works too)
@@ -76,7 +76,7 @@ jobs:
         run: node scripts/ci-run.mjs
         env:
           APP_DIR: ${{ steps.spec.outputs.build_app == 'true' && 'app' || '' }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           # ci-run.mjs picks the environment's own account when it has one, else the default.
           E2E_USER_MEMBER_USERNAME: ${{ vars.E2E_USER_MEMBER_USERNAME }}
           E2E_USER_MEMBER_USERNAME_DEV: ${{ vars.E2E_USER_MEMBER_USERNAME_DEV }}

@@ -5,7 +5,7 @@ import { expect } from 'e2e';
 import { EXPLAINER_URL, mockTextVideoApi, type TextVideoApiOptions } from '../../helpers/text-video-api.ts';
 import { answerAll, progress } from '../../helpers/questionnaire.ts';
 import { switchToArabic } from '../../helpers/language.ts';
-import { ANSWERS, PLACEHOLDER, REQUEST, ROUTE, savedJob, STORYBOARD, TAB, TOTAL, VIDEO } from './fixture.ts';
+import { ANSWERS, REQUEST, ROUTE, savedJob, STORYBOARD, TAB, TOTAL, VIDEO } from './fixture.ts';
 
 const JOB_ID = 5151;
 const FAILED_TITLE = 'Video Generation Failed';
@@ -71,12 +71,15 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
   test('a style and a voice picked in their popups are what the storyboard is asked for', async ({ app, screen, browser }) => {
     const api = await mockTextVideoApi(browser, { storyboard: STORYBOARD, jobId: JOB_ID });
     await app.open(ROUTE);
-    await answerAll(screen, ANSWERS.slice(0, 4), TOTAL);
 
+    // The style is the first question
     await browser.locator('.ttv-picker').tap();
     await screen.getByRole('dialog').getByRole('button', /Cartoon/).tap();
     await screen.getByRole('dialog').getByRole('button', 'Confirm').tap();
     await screen.getByRole('button', 'Continue').tap();
+    await expect(progress(screen, 1, TOTAL)).toBeVisible();
+
+    await answerAll(screen, ANSWERS.slice(1, 5), TOTAL, 1);
 
     await browser.locator('.ttv-picker').tap();
     await browser.locator('.vp-voice-card:not(.is-selected)').first().tap();
@@ -264,7 +267,7 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await browser.locator('button.new-video-btn').tap();
     await expect(screen.getByText('Question 1/10')).toBeVisible({ timeout: 20_000 });
     await expect(progress(screen, 0, TOTAL)).toBeVisible();
-    await expect(screen.getByPlaceholder(PLACEHOLDER.prompt)).toHaveValue('');
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic');
     await expect(browser).toHaveURL(ROUTE);
   });
 

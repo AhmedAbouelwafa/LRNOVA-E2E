@@ -42,15 +42,16 @@ export const minutes = (n: number) => new RegExp(`^${n}\\s*min$`);
 
 /**
  * Every answer up to, not including, the last question (Notes, which carries
- * Generate). Style and voice keep their defaults (Realistic, the default
- * voice); the duration is moved off its default to show it is sent.
+ * Generate), in the order asked: the style first. Style and voice keep their
+ * defaults (Realistic, the default voice); the duration is moved off its
+ * default to show it is sent.
  */
 export const ANSWERS: Answer[] = [
+  'continue', // Style, left on Realistic
   { placeholder: PLACEHOLDER.prompt, value: VIDEO.prompt },
   { placeholder: PLACEHOLDER.audience, value: VIDEO.audience },
   { ages: [20, 30] },
   { choose: 'Intermediate' },
-  'continue', // Style, left on Realistic
   'continue', // Voice, left on the default
   { choose: 'Portrait' },
   { press: minutes(3) },
@@ -126,6 +127,6 @@ export const TEXT_TO_VIDEO_CONTEXT = [
   'Before a storyboard exists the page asks its inputs one question at a time, under a "Question n/total" pill and an "answered / total" counter.',
   'A typed answer is confirmed with the Continue button. Each choice is a button whose name starts with a letter badge, e.g. "A Beginner"; picking one moves on by itself.',
   'The age range is a row of "<n> years" chips: tap one end, tap the other end, then Continue.',
-  'Style and voice are chosen in a popup opened from the question\'s picker button, and kept with Confirm.',
+  'The first question is the video style; style and voice are chosen in a popup opened from the question\'s picker button, and kept with Confirm.',
   'The last question (Notes) has the Generate button. The storyboard then shows scenes with Edit and Generate video buttons.'
 ].join(' ');

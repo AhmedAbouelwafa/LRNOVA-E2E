@@ -3,7 +3,7 @@ import { expect, unique } from 'e2e';
 import { mockToolApi, PROJECT_DETAIL_ID, PROJECT_ID } from '../../helpers/tool-api.ts';
 import { progress } from '../../helpers/questionnaire.ts';
 import { expectCacheOutcome } from '../../helpers/agent.ts';
-import { answerIntake, ENDPOINT, mockNotebookState, NOTEBOOK_CONTEXT, OUTPUT, PLACEHOLDER, ROUTE, TOTAL } from './fixture.ts';
+import { answerIntake, CHOOSE_STYLE, ENDPOINT, mockNotebookState, NOTEBOOK_CONTEXT, OUTPUT, PLACEHOLDER, ROUTE, TOTAL } from './fixture.ts';
 
 /**
  * The replay cache on this tool's screens, including the theme popup: a
@@ -19,11 +19,12 @@ describe(
     test('a typed answer with a run-unique value still replays', async ({ app, screen, browser, agent }) => {
       await mockToolApi(browser, ENDPOINT, OUTPUT);
       await app.open(ROUTE);
+      await answerIntake(screen, 1);
       await expect(screen.getByPlaceholder(PLACEHOLDER.subject)).toBeVisible({ timeout: 20_000 });
       const subject = `Cache Subject ${Date.now()}`;
 
       const step = await agent.act('answer the Subject with {subject}, then press Continue', { params: { subject: unique(subject) } });
-      await expect(progress(screen, 1, TOTAL)).toBeVisible();
+      await expect(progress(screen, 2, TOTAL)).toBeVisible();
       await expect(screen.getByText(subject)).toBeVisible();
       expectCacheOutcome(step);
     });
@@ -31,9 +32,9 @@ describe(
     test('a theme picked in its popup replays through the popup', async ({ app, screen, browser, agent }) => {
       await mockToolApi(browser, ENDPOINT, OUTPUT);
       await app.open(ROUTE);
-      await answerIntake(screen, 6);
+      await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible({ timeout: 20_000 });
 
-      const step = await agent.act('choose the {theme} theme in the theme popup and confirm it', { params: { theme: 'Watercolor' } });
+      const step = await agent.act('choose the {theme} style in the style popup and confirm it', { params: { theme: 'Watercolor' } });
       await expect(screen.getByRole('dialog')).toHaveCount(0);
       await expect(screen.getByRole('button', /^Watercolor/)).toBeVisible();
       await expect(screen.getByRole('button', 'Continue')).toBeEnabled();
@@ -43,10 +44,10 @@ describe(
     test('a replayed choice ends on the screen it recorded', async ({ app, screen, browser, agent }) => {
       await mockToolApi(browser, ENDPOINT, OUTPUT);
       await app.open(ROUTE);
-      await answerIntake(screen, 4);
+      await answerIntake(screen, 5);
 
       const step = await agent.act('choose {language} as the notebook language', { params: { language: 'Arabic' } });
-      await expect(progress(screen, 5, TOTAL)).toBeVisible();
+      await expect(progress(screen, 6, TOTAL)).toBeVisible();
       await expect(screen.getByText('Arabic')).toBeVisible();
       expectCacheOutcome(step);
     });
@@ -59,7 +60,8 @@ describe(
 
       const step = await agent.act('start a new project');
       await expect(browser).toHaveURL(ROUTE);
-      await expect(screen.getByPlaceholder(PLACEHOLDER.subject)).toHaveValue('');
+      await expect(progress(screen, 0, TOTAL)).toBeVisible();
+      await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible();
       expectCacheOutcome(step);
     });
   }

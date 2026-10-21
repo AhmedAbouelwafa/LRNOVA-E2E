@@ -41,30 +41,33 @@ async function type(screen: Screen, placeholder: string, value: string) {
   await screen.getByRole('button', 'Continue').tap();
 }
 
-/** Picks a theme in its popup; the popup's confirm button reads "Choose a theme" too. */
+/** The style question's button, and its popup's confirm button too. */
+export const CHOOSE_STYLE = 'Choose a style';
+
+/** Picks a theme in its popup; the popup's confirm button reads "Choose a style" too. */
 export async function pickTheme(screen: Screen, name: string) {
-  await screen.getByRole('button', 'Choose a theme').tap();
+  await screen.getByRole('button', CHOOSE_STYLE).tap();
   const dialog = screen.getByRole('dialog');
   await dialog.getByRole('button', new RegExp(`^${name}`)).tap();
-  await dialog.getByRole('button', 'Choose a theme').tap();
+  await dialog.getByRole('button', CHOOSE_STYLE).tap();
   await expect(screen.getByRole('dialog')).toHaveCount(0);
 }
 
 /**
- * The answers, one step each, in the order asked. The last one (Extra Notes)
- * carries Generate and is the test's to press.
+ * The answers, one step each, in the order asked: the style first, then the
+ * rest. The last one (Extra Notes) carries Generate and is the test's to press.
  */
 export const STEPS: ((screen: Screen) => Promise<void>)[] = [
+  async (s) => {
+    await pickTheme(s, 'Watercolor');
+    await s.getByRole('button', 'Continue').tap();
+  },
   (s) => type(s, PLACEHOLDER.subject, NOTEBOOK.subject),
   (s) => type(s, PLACEHOLDER.topicTitle, NOTEBOOK.topicTitle),
   (s) => option(s, 'Intermediate').tap(), // Topic level, picked
   (s) => type(s, PLACEHOLDER.grade, NOTEBOOK.grade),
   (s) => option(s, 'English').tap(),
   (s) => s.getByRole('button', 'Continue').tap(), // Detail level, left on Concise
-  async (s) => {
-    await pickTheme(s, 'Watercolor');
-    await s.getByRole('button', 'Continue').tap();
-  },
   (s) => type(s, PLACEHOLDER.creatorName, NOTEBOOK.creatorName),
   (s) => s.getByRole('button', 'Continue').tap(), // Cover, left on
   (s) => s.getByRole('button', 'Skip').tap() // Reference file
@@ -210,6 +213,6 @@ export const NOTEBOOK_CONTEXT = [
   'This is the Notebook Agent in the LRNOVA dashboard: it writes a study notebook, then on request a designed PDF of it.',
   'The page asks its inputs one question at a time, under a "Question n/total" pill and an "answered / total" counter.',
   'A typed answer is confirmed with the Continue button. Choices are buttons whose names start with a letter badge, e.g. "A English".',
-  'The theme is chosen in a popup opened with "Choose a theme" and kept with the popup\'s own "Choose a theme" button.',
+  'The first question is the notebook style, chosen in a popup opened with "Choose a style" and kept with the popup\'s own "Choose a style" button.',
   'The last question (Extra notes) has the Generate button; once a notebook exists it reads Regenerate.'
 ].join(' ');
