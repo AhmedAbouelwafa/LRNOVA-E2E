@@ -31,7 +31,8 @@
     "test:notebook-agent": "e2e run tests/tools/notebook-agent",
     "test:homework-agent": "e2e run tests/tools/homework-agent",
     "test:persona-clone": "e2e run tests/tools/persona-clone",
-    "test:gaming-agent": "e2e run tests/tools/gaming-agent"
+    "test:gaming-agent": "e2e run tests/tools/gaming-agent",
+    "test:course-videos": "e2e run tests/course-videos tests/my-projects/courses.e2e.ts tests/my-projects/course-preview.e2e.ts"
   },
   "dependencies": {
     "redis": "6.3.0"

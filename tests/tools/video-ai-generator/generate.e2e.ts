@@ -48,7 +48,9 @@ describe('video ai generator: generate', { tags: ['tools', 'video-ai-generator']
     await mockVideoApi(browser, { started: JOB_ID }, { status: 'Pending' });
     await startVideo(app, screen, browser);
 
-    await expect(browser.locator('app-video-result app-content-loader')).toBeVisible({ timeout: 20_000 });
+    await expect(browser.locator('app-video-result app-shared-video-generation-loader')).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByRole('heading', 'Creating video...')).toBeVisible();
+    await expect(screen.getByRole('link', /Back to home/)).toHaveAttribute('href', '/home');
     await expect(screen.getByText(FAILED_TITLE)).toHaveCount(0);
     await expect(screen.getByRole('button', 'Regenerate')).toHaveCount(0);
   });

@@ -3,6 +3,7 @@ import type { App, Screen } from 'e2e';
 import type { Browser } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { mockSavedProject, mockToolApi, mockToolFailure, PROJECT_ID, type MockOptions } from '../../helpers/tool-api.ts';
+import { mockCourseVideoApi } from '../../helpers/course-video-api.ts';
 import { answerAll, progress } from '../../helpers/questionnaire.ts';
 import { TOOL_CONTEXT } from '../../helpers/agent.ts';
 import { switchToArabic } from '../../helpers/language.ts';
@@ -252,15 +253,18 @@ describe(
       await expect(screen.getByText('✓ Content copied to clipboard!')).toBeVisible();
     });
 
-    // Exact taps, not the agent: told to "generate a video", the agent carried
-    // on into the video generator and started a real render. The hand-off is
-    // the tool's job; what the generator does next is not.
-    test('Generate a video hands one script to the video generator', async ({ app, screen, browser }) => {
+    // Generate a video no longer hands the script to the video generator: it
+    // offers the two video types, and their dialogs keep the reader on the
+    // script (tests/course-videos covers them). The course videos API is
+    // stubbed so the part reads as free.
+    test('Generate a video offers an avatar or an explainer video and stays on the script', async ({ app, screen, browser }) => {
+      await mockCourseVideoApi(browser);
       await generate(app, screen, browser);
 
       await screen.getByRole('button', /^3 Video 3/).getByRole('button', 'Generate a video').tap();
-      await expect(browser).toHaveURL('/tools/video-ai-generator/5', { timeout: 20_000 });
-      await expect(screen.getByDisplayValue(VIDEO_3)).toBeVisible({ timeout: 20_000 });
+      await expect(screen.getByRole('menuitem', /^Avatar Video/)).toBeEnabled();
+      await expect(screen.getByRole('menuitem', /^Explainer Video/)).toBeEnabled();
+      await expect(browser).toHaveURL(ROUTE);
     });
 
     // A refused run says why, and the questions come back as the reader left

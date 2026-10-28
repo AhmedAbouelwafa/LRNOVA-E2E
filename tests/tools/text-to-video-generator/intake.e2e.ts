@@ -102,7 +102,7 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
 
     await browser.locator('input[type="file"]').setInputFiles(['tests/fixtures/reference.txt']);
     await expect(screen.getByText('Uploaded successfully', { exact: false })).toBeVisible({ timeout: 20_000 });
-    await screen.getByRole('button', 'Continue').tap();
+    // The finished upload moves on by itself, as in the other tools
     await expect(progress(screen, ANSWERS.length, TOTAL)).toBeVisible();
     await expect(screen.getByText('reference.txt')).toBeVisible();
 

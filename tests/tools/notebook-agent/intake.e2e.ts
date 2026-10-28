@@ -81,14 +81,34 @@ describe('notebook agent: intake', { tags: ['tools', 'notebook-agent'], session:
     await app.open(ROUTE);
     await answerIntake(screen, STEPS.length - 1);
 
+    // Picking the file moves on by itself, as in the other tools
     await browser.locator('input[type="file"]').setInputFiles(['tests/fixtures/reference.txt']);
     await expect(screen.getByText('Uploaded successfully', { exact: false }).first()).toBeVisible({ timeout: 20_000 });
-    await screen.getByRole('button', 'Continue').tap();
     await expect(screen.getByText('reference.txt')).toBeVisible();
 
     await screen.getByRole('button', 'Generate').tap();
     await expect.poll(() => api.runs.length, { timeout: 20_000 }).toBe(1);
     expect(api.runs[0].inputs.referenceLink).toBe(UPLOADED_FILE_URL);
+  });
+
+  test('the ✕ on the uploaded reference file removes it, and no referenceLink goes out', async ({ app, screen, browser }) => {
+    await mockUpload(browser);
+    const api = await mockToolApi(browser, ENDPOINT, OUTPUT);
+    await app.open(ROUTE);
+    await answerIntake(screen, STEPS.length - 1);
+
+    await browser.locator('input[type="file"]').setInputFiles(['tests/fixtures/reference.txt']);
+    await expect(screen.getByText('Uploaded successfully', { exact: false }).first()).toBeVisible({ timeout: 20_000 });
+
+    // One click on the collapsed step drops the file and reopens its dropzone
+    await screen.getByRole('button', 'Remove reference.txt').tap();
+    await expect(screen.getByRole('button', 'Remove reference.txt')).toHaveCount(0);
+    await expect(screen.getByText('PDF, Word or TXT · max 10MB')).toBeVisible();
+
+    await screen.getByRole('button', 'Skip').tap();
+    await screen.getByRole('button', 'Generate').tap();
+    await expect.poll(() => api.runs.length, { timeout: 20_000 }).toBe(1);
+    expect(api.runs[0].inputs.referenceLink).toBe('');
   });
 
   test('switching the site to Arabic keeps the answers given', async ({ app, screen, browser }) => {

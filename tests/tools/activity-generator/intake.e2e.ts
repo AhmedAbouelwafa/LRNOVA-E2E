@@ -78,6 +78,29 @@ describe(
       expect(api.runs[0].inputs).toMatchObject({ referenceLink: UPLOADED_FILE_URL, extraNotes: 'Keep it under fifteen minutes' });
     });
 
+    test('the ✕ on an uploaded reference file removes it, and no referenceLink goes out', async ({ app, screen, browser }) => {
+      await mockUpload(browser);
+      const api = await mockToolApi(browser, ENDPOINT, OUTPUT);
+      await app.open(ROUTE);
+      await answerAll(screen, ANSWERS.slice(0, -1), TOTAL);
+
+      await browser.locator('input[type="file"]').setInputFiles(['tests/fixtures/reference.txt']);
+      await expect(screen.getByText('✓ File uploaded successfully')).toBeVisible({ timeout: 20_000 });
+
+      // The ✕ sits on the collapsed answer: one click drops the file and
+      // reopens the question on its dropzone, with no Edit first
+      await screen.getByRole('button', 'Remove reference.txt').tap();
+      await expect(screen.getByRole('button', 'Remove reference.txt')).toHaveCount(0);
+      await expect(screen.getByText('PDF, Word or TXT · max 10MB')).toBeVisible();
+
+      await screen.getByRole('button', 'Skip').tap();
+      await screen.getByPlaceholder(PLACEHOLDER.extraNotes).fill('Keep it under fifteen minutes');
+      await screen.getByRole('button', 'Generate').tap();
+      await expect(screen.getByRole('heading', 'Listening Pairs')).toBeVisible({ timeout: 20_000 });
+
+      expect(api.runs[0].inputs).toMatchObject({ referenceLink: '', extraNotes: 'Keep it under fifteen minutes' });
+    });
+
     test('switching the site to Arabic keeps every answer and the place', async ({ app, screen, browser }) => {
       const api = await mockToolApi(browser, ENDPOINT, OUTPUT);
       await app.open(ROUTE);
