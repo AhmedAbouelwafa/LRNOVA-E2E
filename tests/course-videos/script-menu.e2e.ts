@@ -9,6 +9,7 @@ import { savedJob, STORYBOARD } from '../tools/text-to-video-generator/fixture.t
 import {
   COURSE_VIDEO_CONTEXT,
   courseDialog,
+  EXPLAINER_SCRIPT,
   generateButton,
   head,
   LABEL,
@@ -184,7 +185,7 @@ describe(
       const dialog = courseDialog(screen, LABEL.video3);
       await expect(dialog).toBeVisible({ timeout: 20_000 });
       await expect(dialog.getByText('Explainer Video')).toBeVisible();
-      await expect(dialog.getByText('The script is used as the video idea.')).toBeVisible();
+      await expect(dialog.getByText(EXPLAINER_SCRIPT.hint)).toBeVisible();
     });
   }
 );

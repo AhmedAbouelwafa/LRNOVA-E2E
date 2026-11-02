@@ -153,11 +153,12 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await expect(browser.locator('.scene-editor__textarea--narration')).toHaveValue('An edit the server refuses.');
   });
 
-  test('a refused storyboard shows the reason', async ({ app, screen, browser }) => {
+  test('a refused storyboard says so in our own words, never the API message', async ({ app, screen, browser }) => {
     await generate(app, screen, browser, { storyboard: { refused: 'The storyboard service is busy.' } });
 
     await expect(screen.getByText(FAILED_TITLE)).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText('The storyboard service is busy.')).toBeVisible();
+    await expect(screen.getByText(STORYBOARD_FAILED)).toBeVisible();
+    await expect(screen.getByText('The storyboard service is busy.')).toHaveCount(0);
     await expect(screen.getByRole('button', /Try Again/)).toBeVisible();
   });
 
@@ -226,15 +227,17 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await render(app, screen, browser, { status: 'Pending' });
 
     await expect(screen.getByRole('tab', TAB.video)).toHaveAttribute('aria-selected', 'true', { timeout: 20_000 });
-    await expect(browser.locator('app-text-to-video-generator-result app-content-loader')).toBeVisible();
+    await expect(browser.locator('app-text-to-video-generator-result app-shared-video-generation-loader')).toBeVisible();
     await expect(screen.getByText(FAILED_TITLE)).toHaveCount(0);
   });
 
-  test('a failed render shows the reason the job gave', async ({ app, screen, browser }) => {
+  // The job's `errorMessage` is the worker's raw error (a provider's JSON body, at worst): never shown.
+  test('a failed render says so in our own words, never the job error text', async ({ app, screen, browser }) => {
     await render(app, screen, browser, { status: 'Failed', errorMessage: 'The narration could not be voiced.' });
 
     await expect(screen.getByText(FAILED_TITLE)).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText('The narration could not be voiced.')).toBeVisible();
+    await expect(screen.getByText('Something went wrong. Please try again.')).toBeVisible();
+    await expect(screen.getByText('The narration could not be voiced.')).toHaveCount(0);
     await expect(screen.getByRole('button', /Try Again/)).toBeVisible();
   });
 
@@ -267,7 +270,7 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await browser.locator('button.new-video-btn').tap();
     await expect(screen.getByText('Question 1/10')).toBeVisible({ timeout: 20_000 });
     await expect(progress(screen, 0, TOTAL)).toBeVisible();
-    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic');
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Cinematic');
     await expect(browser).toHaveURL(ROUTE);
   });
 
@@ -296,7 +299,8 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await screen.getByDisplayValue('Untitled').fill('Listening Explainer');
     await screen.getByDisplayValue('Listening Explainer').press('Enter');
 
-    await expect(screen.getByText('That title is already taken.')).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByText("We couldn't save the title. Please try again.")).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByText('That title is already taken.')).toHaveCount(0);
   });
 
   // ── A job opened from My Projects ──────────────────────────────────────
@@ -330,12 +334,14 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await expectVideo(screen, browser);
   });
 
-  test('a failed job opens on its failure, with the reason it gave', async ({ app, screen, browser }) => {
+  // The job's `errorMessage` is the worker's raw error: the page says it in its own words.
+  test('a failed job opens on its failure, never the job error text', async ({ app, screen, browser }) => {
     await mockTextVideoApi(browser, { job: savedJob('Failed') });
     await app.open(`${ROUTE}/777`);
 
     await expect(screen.getByText(FAILED_TITLE)).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText('The narration could not be voiced.')).toBeVisible();
+    await expect(screen.getByText('Something went wrong. Please try again.')).toBeVisible();
+    await expect(screen.getByText('The narration could not be voiced.')).toHaveCount(0);
   });
 
   // A job that could not be fetched was reported as a failed video render, and
@@ -345,7 +351,8 @@ describe('text to video: generate', { tags: ['tools', 'text-to-video-generator']
     await app.open(`${ROUTE}/778`);
 
     await expect(screen.getByText("Couldn't Open This Video")).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText("We couldn't open this project. Please try again.")).toBeVisible();
+    // The stub aborts an unknown job's fetch, which the browser reports as a lost connection
+    await expect(screen.getByText('Unable to connect. Please check your internet connection.')).toBeVisible();
     await expect(screen.getByText(FAILED_TITLE)).toHaveCount(0);
     await expect(screen.getByText(RENDER_FAILED)).toHaveCount(0);
 

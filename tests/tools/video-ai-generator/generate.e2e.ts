@@ -8,6 +8,8 @@ import { JOB_ID, ROUTE, ROUTES, SCRIPT, TOOL_ID } from './fixture.ts';
 
 const FAILED_TITLE = 'Video Generation Unavailable';
 const SERVER_BUSY = 'The server is busy right now. Please try again later.';
+/** A render that failed says what failed — never the renderer's own error text. */
+const AVATAR_FAILED = "We couldn't generate your avatar video. Please try again.";
 
 /** Writes the script, picks a presenter and a voice, and starts the (stubbed) render. */
 async function startVideo(app: App, screen: Screen, browser: Browser) {
@@ -61,20 +63,21 @@ describe('video ai generator: generate', { tags: ['tools', 'video-ai-generator']
     await startVideo(app, screen, browser);
 
     await expect(screen.getByText(FAILED_TITLE)).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText(SERVER_BUSY)).toBeVisible();
+    await expect(screen.getByText(AVATAR_FAILED)).toBeVisible();
     await screen.getByRole('button', 'Try Again').tap();
 
     await expect(screen.getByRole('textbox', 'Script')).toHaveValue(SCRIPT);
     await expect(screen.getByText(FAILED_TITLE)).toHaveCount(0);
   });
 
-  test('a refused render shows the reason', async ({ app, screen, browser }) => {
+  test('a refused render says so in our own words, never the API message', async ({ app, screen, browser }) => {
     await blockVideoRenders(browser);
     await mockVideoApi(browser, { refused: 'Video rendering is paused for maintenance.' });
     await startVideo(app, screen, browser);
 
     await expect(screen.getByText(FAILED_TITLE)).toBeVisible({ timeout: 20_000 });
-    await expect(screen.getByText('Video rendering is paused for maintenance.')).toBeVisible();
+    await expect(screen.getByText("We couldn't generate this. Please try again.")).toBeVisible();
+    await expect(screen.getByText('Video rendering is paused for maintenance.')).toHaveCount(0);
     await expect(screen.getByRole('button', 'Try Again')).toBeVisible();
   });
 
@@ -138,7 +141,8 @@ describe('video ai generator: generate', { tags: ['tools', 'video-ai-generator']
     await screen.getByDisplayValue('Untitled').fill('Listening Intro');
     await screen.getByDisplayValue('Listening Intro').press('Enter');
 
-    await expect(screen.getByText('That title is already taken.')).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByText("We couldn't save the title. Please try again.")).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByText('That title is already taken.')).toHaveCount(0);
     await expect(screen.getByText(FAILED_TITLE)).toHaveCount(0);
     await expect(browser.locator('video.video-player')).toBeVisible();
   });
@@ -146,7 +150,7 @@ describe('video ai generator: generate', { tags: ['tools', 'video-ai-generator']
   for (const [status, check] of [
     ['Completed', 'opens straight onto the video'],
     ['Pending', 'opens on the loader and picks up the render'],
-    ['Failed', 'opens on the failure, with the reason the job gave']
+    ['Failed', 'opens on the failure, never the job error text']
   ] as [VideoJobStatus, string][]) {
     test(`a ${status.toLowerCase()} job opened from My Projects ${check}`, async ({ app, screen, browser }) => {
       await blockVideoRenders(browser);
@@ -159,7 +163,8 @@ describe('video ai generator: generate', { tags: ['tools', 'video-ai-generator']
 
       if (status === 'Failed') {
         await expect(screen.getByText(FAILED_TITLE)).toBeVisible({ timeout: 20_000 });
-        await expect(screen.getByText('The presenter could not be rendered.')).toBeVisible();
+        await expect(screen.getByText(AVATAR_FAILED)).toBeVisible();
+        await expect(screen.getByText('The presenter could not be rendered.')).toHaveCount(0);
       } else {
         // A pending job is polled at once; the stub answers Completed
         await expectVideo(screen, browser);

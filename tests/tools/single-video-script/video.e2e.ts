@@ -76,7 +76,8 @@ describe('single video script: video', { tags: ['tools', 'single-video-script', 
 
     await expect(screen.getByRole('tab', 'Video')).toHaveAttribute('aria-selected', 'true', { timeout: 20_000 });
     await expect(screen.getByText('Video Generation Unavailable')).toBeVisible();
-    await expect(screen.getByText('Video rendering is paused for maintenance.')).toBeVisible();
+    await expect(screen.getByText("We couldn't start generating the video. Please try again.")).toBeVisible();
+    await expect(screen.getByText('Video rendering is paused for maintenance.')).toHaveCount(0);
     await screen.getByRole('button', 'Try Again').tap();
     await expect(screen.getByRole('dialog').getByText('Create Video Avatar')).toBeVisible();
   });

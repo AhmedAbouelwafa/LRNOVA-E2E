@@ -146,13 +146,15 @@ describe('course videos: avatar video', { tags: ['course-videos', 'full-course-s
     });
   });
 
-  test('a refusal says why, keeps the inputs, and can be sent again', async ({ app, screen, browser }) => {
+  // The refusal is told in the page's own words (COURSE_VIDEOS.ERRORS.GENERIC), never the API's.
+  test('a refusal says so, keeps the inputs, and can be sent again', async ({ app, screen, browser }) => {
     const { api, dialog } = await openAvatarDialog(app, screen, browser, {
       avatar: [{ refused: 'The avatar service is busy.' }, 'accepted']
     });
 
     await send(dialog, browser);
-    await expect(dialog.getByRole('alert')).toContainText('The avatar service is busy.', { timeout: 20_000 });
+    await expect(dialog.getByRole('alert')).toContainText('Something went wrong. Please try again.', { timeout: 20_000 });
+    await expect(dialog.getByText('The avatar service is busy.')).toHaveCount(0);
     await expect(dialog.getByLabel('Script')).toHaveValue(SCRIPT.video3);
     await expect(dialog.getByRole('button', /Change/)).toBeVisible();
     await expect(dialog.getByText(ACCEPTED)).toHaveCount(0);

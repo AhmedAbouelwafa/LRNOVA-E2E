@@ -169,7 +169,10 @@ describe('my projects: state survives a visit to a project', { tags: ['my-projec
     await screen.getByRole('button', 'Back').tap();
 
     await expect(browser).toHaveURL('/my-projects?tab=text');
-    await expect.poll(() => browser.evaluate<number>(SCROLL_TOP), { timeout: 10_000 }).toBeCloseTo(before, -1);
+    // Back within a few pixels of where it was (the runner's toBeCloseTo takes no negative precision)
+    await expect
+      .poll(async () => Math.abs((await browser.evaluate<number>(SCROLL_TOP)) - before), { timeout: 10_000 })
+      .toBeLessThan(5);
   });
 
   test('browser Back and Forward keep the listing state consistent', async ({ app, screen, browser }) => {

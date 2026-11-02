@@ -5,12 +5,12 @@ import { expect } from 'e2e';
 import { linkedVideo, type CourseVideoApiOptions } from '../helpers/course-video-api.ts';
 import { DEFAULT_JOB_ID, mockTextVideoApi, type TextVideoApiOptions } from '../helpers/text-video-api.ts';
 import { answer, answerAll, progress } from '../helpers/questionnaire.ts';
-import { DEFAULT_VOICE, savedJob, STORYBOARD, VIDEO } from '../tools/text-to-video-generator/fixture.ts';
+import { DEFAULT_VOICE, savedJob, STORYBOARD } from '../tools/text-to-video-generator/fixture.ts';
 import {
   COURSE,
   courseDialog,
   EXPLAINER_ANSWERS,
-  EXPLAINER_PLACEHOLDER,
+  EXPLAINER_SCRIPT,
   EXPLAINER_TOTAL,
   generateButton,
   head,
@@ -24,6 +24,11 @@ import {
 } from './fixture.ts';
 
 const ACCEPTED = 'Your video is being generated';
+/** The page's own messages for a refusal (TEXT_TO_VIDEO.ERRORS.*): the API's words are never shown. */
+const STORYBOARD_FAILED = 'Storyboard generation failed. Please try again.';
+const VIDEO_FAILED = 'Video generation failed. Please check your description and try again.';
+/** Asked on the standalone page only: a course video follows its part's script and storyboard. */
+const STANDALONE_ONLY = ['prompt', 'targetAudience', 'ageMin', 'ageMax', 'knowledgeLevel', 'estimatedDurationMinutes', 'referenceLink'];
 const [SCENE_1, SCENE_2] = STORYBOARD.scenes;
 
 /**
@@ -58,28 +63,28 @@ async function expectStoryboard(dialog: Screen) {
 }
 
 describe('course videos: explainer video', { tags: ['course-videos', 'full-course-script'], session: 'member', timeout: 180_000 }, () => {
-  test("the part's script is the video idea", async ({ app, screen, browser }) => {
+  test("the part's script is the video script", async ({ app, screen, browser }) => {
     const { dialog } = await openExplainerDialog(app, screen, browser);
 
     await expect(dialog.getByText('Explainer Video')).toBeVisible();
     await expect(dialog.getByText(COURSE.title)).toBeVisible();
-    await expect(dialog.getByText('The script is used as the video idea.')).toBeVisible();
+    await expect(dialog.getByText(EXPLAINER_SCRIPT.hint)).toBeVisible();
     await expect(progress(dialog, 0, EXPLAINER_TOTAL)).toBeVisible();
 
     await answer(dialog, 'continue'); // Style
-    await expect(dialog.getByPlaceholder(EXPLAINER_PLACEHOLDER.prompt)).toHaveValue(SCRIPT.video3);
+    await expect(dialog.getByPlaceholder(EXPLAINER_SCRIPT.placeholder)).toHaveValue(SCRIPT.video3);
   });
 
   // The standalone page caps a video idea at 200 characters; a course script
   // runs far longer, and the dialog takes it whole.
-  test('a video idea longer than the standalone limit is accepted', async ({ app, screen, browser }) => {
+  test('a script longer than the standalone limit is accepted', async ({ app, screen, browser }) => {
     const { dialog } = await openExplainerDialog(app, screen, browser);
     const long = `${SCRIPT.video3} ${'Block the time before the week fills up. '.repeat(15)}`.trim();
     expect(long.length).toBeGreaterThan(200);
 
     await answer(dialog, 'continue'); // Style
-    await dialog.getByPlaceholder(EXPLAINER_PLACEHOLDER.prompt).fill(long);
-    await expect(dialog.getByText(`${long.length}/25000`)).toBeVisible();
+    await dialog.getByPlaceholder(EXPLAINER_SCRIPT.placeholder).fill(long);
+    await expect(dialog.getByText(`${long.length}/${EXPLAINER_SCRIPT.max}`)).toBeVisible();
     await expect(dialog.getByText(/cannot exceed/)).toHaveCount(0);
     await dialog.getByRole('button', 'Continue').tap();
     await expect(progress(dialog, 2, EXPLAINER_TOTAL)).toBeVisible();
@@ -95,16 +100,15 @@ describe('course videos: explainer video', { tags: ['course-videos', 'full-cours
     expect(api.storyboards[0]).toMatchObject({
       source: SOURCE.video3,
       jobName: jobName(LABEL.video3),
-      prompt: SCRIPT.video3,
-      style: 'realistic',
+      script: SCRIPT.video3,
+      style: 'cinematic',
       orientation: 'portrait',
-      voice: DEFAULT_VOICE,
-      estimatedDurationMinutes: 3,
-      targetAudience: VIDEO.audience,
-      ageMin: '20',
-      ageMax: '30',
-      knowledgeLevel: 'intermediate'
+      imageModel: 5,
+      voice: DEFAULT_VOICE
     });
+    for (const field of STANDALONE_ONLY) {
+      expect(Object.keys(api.storyboards[0])).not.toContain(field);
+    }
     // Linked to the course, never through the standalone storyboard endpoint
     expect(textApi.storyboards).toHaveLength(0);
 
@@ -143,7 +147,8 @@ describe('course videos: explainer video', { tags: ['course-videos', 'full-cours
     });
 
     await generateStoryboard(dialog);
-    await expect(dialog.getByRole('alert')).toContainText('The storyboard model is busy.', { timeout: 20_000 });
+    await expect(dialog.getByRole('alert')).toContainText(STORYBOARD_FAILED, { timeout: 20_000 });
+    await expect(dialog.getByText('The storyboard model is busy.')).toHaveCount(0);
     await expect(dialog.getByText(SCENE_1.narration)).toHaveCount(0);
 
     await dialog.getByRole('button', 'Try again').tap();
@@ -179,7 +184,8 @@ describe('course videos: explainer video', { tags: ['course-videos', 'full-cours
     await expectStoryboard(dialog);
     await dialog.getByRole('button', /Generate video/).tap();
 
-    await expect(dialog.getByRole('alert')).toContainText('Rendering is paused.', { timeout: 20_000 });
+    await expect(dialog.getByRole('alert')).toContainText(VIDEO_FAILED, { timeout: 20_000 });
+    await expect(dialog.getByText('Rendering is paused.')).toHaveCount(0);
     await expect(dialog.getByText(SCENE_1.narration)).toBeVisible();
     await expect(dialog.getByRole('button', /Generate video/)).toBeEnabled();
     await expect(dialog.getByText(ACCEPTED)).toHaveCount(0);

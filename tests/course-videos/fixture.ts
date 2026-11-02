@@ -5,7 +5,6 @@ import { mockSavedProject, mockVideoApi, PROJECT_DETAIL_ID, PROJECT_ID } from '.
 import { mockCourseVideoApi, type CourseVideoApiOptions, type Segment } from '../helpers/course-video-api.ts';
 import type { Answer } from '../helpers/questionnaire.ts';
 import { COURSE, OUTPUT, ROUTE } from '../tools/full-course-script/fixture.ts';
-import { minutes, PLACEHOLDER as EXPLAINER_PLACEHOLDER, VIDEO as EXPLAINER_VIDEO } from '../tools/text-to-video-generator/fixture.ts';
 
 /**
  * Course videos: an avatar or explainer video made from one part of a Full
@@ -152,24 +151,26 @@ export async function choosePresenter(dialog: Screen, browser: Browser): Promise
 }
 
 /**
- * The explainer dialog asks the Explainer Video Agent's own questions, with the
- * part's script already in the Video Idea: every answer up to, not including,
- * Notes (which carries Generate).
+ * The explainer dialog asks the course-script questions only (COURSE_SCRIPT_STEPS:
+ * style, script, voice, orientation, notes): a course video follows its part's
+ * script, so audience, ages, level, language, duration and a reference file are
+ * not asked — its length comes from the storyboard. Every answer up to, not
+ * including, Notes (which carries Generate).
  */
-export const EXPLAINER_TOTAL = 10;
+export const EXPLAINER_TOTAL = 5;
 export const EXPLAINER_ANSWERS: Answer[] = [
-  'continue', // Style, left on Realistic
-  'continue', // Video Idea: the part's script, as it came
-  { placeholder: EXPLAINER_PLACEHOLDER.audience, value: EXPLAINER_VIDEO.audience },
-  { ages: [20, 30] },
-  { choose: 'Intermediate' },
+  'continue', // Style, left on Cinematic
+  'continue', // Video script: the part's script, as it came
   'continue', // Voice, left on the default
-  { choose: 'Portrait' },
-  { press: minutes(3) },
-  'skip' // Reference File
+  { choose: 'Portrait' }
 ];
 
-export { EXPLAINER_PLACEHOLDER };
+/** The script step's field in course mode (COURSE_VIDEOS.EXPLAINER.SCRIPT.*). */
+export const EXPLAINER_SCRIPT = {
+  placeholder: 'The script the video narrates. You can edit it before generating.',
+  hint: "The video follows this script. Its length comes from the storyboard's scenes.",
+  max: 25_000
+};
 
 /** The vocabulary of these screens, for the agent; part of the replay cache's key. */
 export const COURSE_VIDEO_CONTEXT = [

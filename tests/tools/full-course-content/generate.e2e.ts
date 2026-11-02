@@ -196,7 +196,9 @@ describe(
       await answerAll(screen, ANSWERS, TOTAL);
       await screen.getByRole('button', 'Generate').tap();
 
-      await expect(screen.getByRole('alert')).toContainText('The model is busy, try again.', { timeout: 20_000 });
+      // The page's own message, never the API's `message`
+      await expect(screen.getByRole('alert')).toContainText("We couldn't generate this. Please try again.", { timeout: 20_000 });
+      await expect(screen.getByRole('alert')).not.toContainText('The model is busy');
       await expect(progress(screen, ANSWERS.length, TOTAL)).toBeVisible();
       await expect(screen.getByText(COURSE.title)).toBeVisible();
       await expect(screen.getByRole('button', 'Generate')).toBeEnabled();

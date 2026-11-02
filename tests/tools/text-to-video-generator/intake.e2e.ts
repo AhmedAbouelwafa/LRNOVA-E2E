@@ -8,13 +8,13 @@ import { expectCacheOutcome } from '../../helpers/agent.ts';
 import { ANSWERS, PLACEHOLDER, ROUTE, STORYBOARD, TAB, TEXT_TO_VIDEO_CONTEXT, TOOL_NAME, TOOL_NAME_AR, TOTAL, VIDEO } from './fixture.ts';
 
 describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], session: 'member', timeout: 180_000 }, () => {
-  test('opens on the style, already on Realistic, one of ten questions', async ({ app, screen, browser }) => {
+  test('opens on the style, already on Cinematic, one of ten questions', async ({ app, screen, browser }) => {
     await mockTextVideoApi(browser, { storyboard: STORYBOARD });
     await app.open(ROUTE);
 
     await expect(screen.getByRole('heading', TOOL_NAME)).toBeVisible({ timeout: 20_000 });
     await expect(screen.getByText('Question 1/10')).toBeVisible();
-    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic');
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Cinematic');
     await expect(progress(screen, 0, TOTAL)).toBeVisible();
     await expect(screen.getByRole('button', 'Continue')).toBeEnabled();
     // Nothing to show yet, so no canvas
@@ -57,7 +57,7 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
     await mockTextVideoApi(browser, { storyboard: STORYBOARD });
     await app.open(ROUTE);
 
-    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic', { timeout: 20_000 });
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Cinematic', { timeout: 20_000 });
     await browser.locator('.ttv-picker').tap();
     const dialog = screen.getByRole('dialog');
     await expect(dialog.getByRole('heading', 'Choose a video style')).toBeVisible();
@@ -67,7 +67,7 @@ describe('text to video: intake', { tags: ['tools', 'text-to-video-generator'], 
     // Cancel keeps the style it had (the footer's: the header's × is named Cancel too)
     await dialog.getByRole('button', /Whiteboard/).tap();
     await browser.locator('.sp-btn--ghost').tap();
-    await expect(browser.locator('.ttv-picker__value')).toHaveText('Realistic');
+    await expect(browser.locator('.ttv-picker__value')).toHaveText('Cinematic');
 
     await browser.locator('.ttv-picker').tap();
     await screen.getByRole('dialog').getByRole('button', /Whiteboard/).tap();

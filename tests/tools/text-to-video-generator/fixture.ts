@@ -43,11 +43,11 @@ export const minutes = (n: number) => new RegExp(`^${n}\\s*min$`);
 /**
  * Every answer up to, not including, the last question (Notes, which carries
  * Generate), in the order asked: the style first. Style and voice keep their
- * defaults (Realistic, the default voice); the duration is moved off its
+ * defaults (Cinematic, the default voice); the duration is moved off its
  * default to show it is sent.
  */
 export const ANSWERS: Answer[] = [
-  'continue', // Style, left on Realistic
+  'continue', // Style, left on Cinematic
   { placeholder: PLACEHOLDER.prompt, value: VIDEO.prompt },
   { placeholder: PLACEHOLDER.audience, value: VIDEO.audience },
   { ages: [20, 30] },
@@ -61,9 +61,10 @@ export const ANSWERS: Answer[] = [
 /** What those answers send to stage 1. */
 export const REQUEST = {
   prompt: VIDEO.prompt,
-  style: 'realistic',
+  style: 'cinematic',
   orientation: 'portrait',
-  imageModel: 2,
+  // Fixed by the app (TEXT_TO_VIDEO_DEFAULTS.imageModel); not asked in the intake
+  imageModel: 5,
   voice: DEFAULT_VOICE,
   estimatedDurationMinutes: 3,
   targetAudience: VIDEO.audience,

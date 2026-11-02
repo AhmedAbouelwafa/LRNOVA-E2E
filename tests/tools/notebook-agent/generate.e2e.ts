@@ -146,7 +146,9 @@ describe('notebook agent: generate', { tags: ['tools', 'notebook-agent'], sessio
     await mockToolFailure(browser, ENDPOINT, { message: 'The model is busy, try again.' });
     await generateRefused(app, screen);
 
-    await expect(screen.getByRole('alert')).toContainText('The model is busy, try again.', { timeout: 20_000 });
+    // The page's own message, never the API's `message`
+    await expect(screen.getByRole('alert')).toContainText("We couldn't generate this. Please try again.", { timeout: 20_000 });
+    await expect(screen.getByRole('alert')).not.toContainText('The model is busy');
     await expect(screen.getByText(NOTEBOOK.topicTitle)).toBeVisible();
     await expect(screen.getByRole('button', 'Generate')).toBeEnabled();
   });
@@ -228,12 +230,14 @@ describe('notebook agent: generate', { tags: ['tools', 'notebook-agent'], sessio
     await expect(editContent(browser)).toHaveCount(0);
   });
 
-  test('a failed PDF says why and offers a retry', async ({ app, screen, browser }) => {
+  // The job's `errorMessage` is the PDF worker's own wording: the page says it in its own words instead.
+  test('a failed PDF says so and offers a retry', async ({ app, screen, browser }) => {
     await generate(app, screen, browser);
     await mockNotebookPdf(browser, { status: 'Failed', errorMessage: 'The cover image could not be drawn.' });
 
     await screen.getByRole('button', 'Generate Notebook PDF').tap();
-    await expect(screen.getByText('The cover image could not be drawn.')).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByText('PDF generation failed.')).toBeVisible({ timeout: 20_000 });
+    await expect(screen.getByText('The cover image could not be drawn.')).toHaveCount(0);
     await expect(screen.getByRole('button', 'Retry PDF')).toBeVisible();
   });
 
@@ -287,7 +291,8 @@ describe('notebook agent: generate', { tags: ['tools', 'notebook-agent'], sessio
     await mockNotebookState(browser, { refused: 'This project no longer exists.' });
     await app.open(`${ROUTE}?projectId=${PROJECT_ID}`);
 
-    await expect(screen.getByRole('alert')).toContainText('This project no longer exists.', { timeout: 20_000 });
+    await expect(screen.getByRole('alert')).toContainText("We couldn't open this project. Please try again.", { timeout: 20_000 });
+    await expect(screen.getByText('This project no longer exists.')).toHaveCount(0);
     await expect(screen.getByRole('button', CHOOSE_STYLE)).toBeVisible();
   });
 });
